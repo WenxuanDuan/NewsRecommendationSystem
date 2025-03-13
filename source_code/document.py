@@ -1,16 +1,18 @@
 import os
 import re
 import nltk
+import numpy as np
+import gensim.downloader as api
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# # 下载 NLTK 资源（仅需运行一次）
-# nltk.download("punkt")
-# nltk.download("stopwords")
-# nltk.download("wordnet")
+# **📌 加载 Word2Vec 预训练模型**
+print("\n📌 Loading Pre-trained Word2Vec Model...\n")
+w2v_model = api.load("word2vec-google-news-300")  # 300 维 Google 预训练模型
 
-# **定义数据预处理函数**
+
+# **📌 文本预处理**
 def preprocess_text(text):
     """对文本进行分词、去停用词、词形还原"""
     lemmatizer = WordNetLemmatizer()
@@ -30,7 +32,20 @@ def preprocess_text(text):
 
     return " ".join(processed_tokens)
 
-# **加载并处理文档**
+
+# **📌 文档转换为 Word2Vec 特征**
+def document_to_w2v(doc, model=w2v_model, vector_size=300):
+    """将文档转换为 Word2Vec 词向量的均值"""
+    words = doc.split()
+    word_vectors = [model[word] for word in words if word in model]
+
+    if word_vectors:
+        return np.mean(word_vectors, axis=0)
+    else:
+        return np.zeros(vector_size)
+
+
+# **📌 加载并处理文档**
 def load_and_preprocess_documents(data_dir):
     """
     读取数据集文件夹，预处理文本，并返回 (文本列表, 类别标签列表)
@@ -63,7 +78,6 @@ def load_and_preprocess_documents(data_dir):
                 labels.append(topic)
 
     return documents, labels
-
 
 # Example usage:
 # doc = Document("001.txt")

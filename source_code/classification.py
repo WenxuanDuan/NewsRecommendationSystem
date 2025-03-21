@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
+from collections import Counter
 
 # **📌 训练 Naive Bayes + TF-IDF**
 def train_naive_bayes_tfidf(X_train_tfidf, y_train):
@@ -40,7 +41,7 @@ def train_xgboost_w2v(X_train_w2v, y_train, num_classes):
     model.fit(X_train_w2v, y_train)
     return model
 
-# **📌 定义一个简单的前馈神经网络**
+# ✅ 简单神经网络结构
 class SimpleNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(SimpleNN, self).__init__()
@@ -54,14 +55,20 @@ class SimpleNN(nn.Module):
     def forward(self, x):
         return self.classifier(x)
 
-# **📌 训练 Word2Vec + Neural Network**
+# ✅ 支持 class_weight 的训练函数
 def train_neural_net_w2v(X_train, y_train, X_val, num_classes, epochs=20, hidden_dim=128, lr=0.001):
     input_dim = X_train.shape[1]
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = SimpleNN(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=num_classes).to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    # ✅ 计算 class weights（少的类权重大）
+    label_counts = Counter(y_train)
+    total_samples = len(y_train)
+    class_weights = [total_samples / (num_classes * label_counts[i]) for i in range(num_classes)]
+    class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
+
+    # ✅ 带权重的 CrossEntropyLoss
+    criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     X_train_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
@@ -75,5 +82,4 @@ def train_neural_net_w2v(X_train, y_train, X_val, num_classes, epochs=20, hidden
         loss.backward()
         optimizer.step()
 
-    # 返回训练好的模型
     return model

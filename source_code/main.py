@@ -10,6 +10,7 @@ from classification import (
     train_xgboost_tfidf,
     train_xgboost_w2v,
     train_neural_net_w2v,
+    train_neural_net_sbert,
     train_xgboost_sbert
 )
 
@@ -58,6 +59,9 @@ def main():
 
     # 🔹 XGBoost + SBERT
     xgb_sbert_accuracies, xgb_sbert_conf_mat = [], np.zeros((len(unique_labels), len(unique_labels)), dtype=int)
+
+    # 🔹 Neural Network + SBERT
+    nn_sbert_accuracies, nn_sbert_conf_mat = [], np.zeros((len(unique_labels), len(unique_labels)), dtype=int)
 
     for fold, (train_idx, test_idx) in enumerate(kf.split(X_tfidf), 1):
         print(f"🔹 Fold {fold}/10")
@@ -126,7 +130,21 @@ def main():
         xgb_sbert_accuracies.append(accuracy_sbert)
         xgb_sbert_conf_mat += conf_mat_sbert
 
-        print(f"✅ Naive Bayes: {accuracy_nb:.4f}, kNN: {accuracy_knn:.4f}, XGBoost TF-IDF: {accuracy_xgb_tfidf:.4f}, XGBoost W2V: {accuracy_xgb_w2v:.4f}, XGBoost SBERT: {accuracy_sbert:.4f}, Neural Network W2V: {accuracy_nn:.4f}\n")
+        # **📌 训练 Neural Network + SBERT**
+        X_train_sbert, X_test_sbert = X_sbert[train_idx], X_sbert[test_idx]
+        nn_sbert_model = train_neural_net_sbert(X_train_sbert, y_train, X_test_sbert, num_classes=len(unique_labels))
+        nn_sbert_model.eval()
+        with torch.no_grad():
+            X_test_tensor = torch.tensor(X_test_sbert, dtype=torch.float32)
+            outputs = nn_sbert_model(X_test_tensor)
+            y_pred_nn_sbert = torch.argmax(outputs, dim=1).cpu().numpy()
+
+        # **📌 计算评估指标**
+        conf_mat_nn_sbert, report_nn_sbert, accuracy_nn_sbert = compute_metrics(y_test, y_pred_nn_sbert, unique_labels, index_to_label)
+        nn_sbert_accuracies.append(accuracy_nn_sbert)
+        nn_sbert_conf_mat += conf_mat_nn_sbert
+
+        print(f"✅ Naive Bayes TF-IDF: {accuracy_nb:.4f}, kNN W2V: {accuracy_knn:.4f}, XGBoost TF-IDF: {accuracy_xgb_tfidf:.4f}, XGBoost W2V: {accuracy_xgb_w2v:.4f}, XGBoost SBERT: {accuracy_sbert:.4f}, Neural Network W2V: {accuracy_nn:.4f}, Neural Network SBERT: {accuracy_nn_sbert:.4f}\n")
 
     # **📌 打印最终结果**
     print("\n📌 Final Classification Report (Naive Bayes + TF-IDF):")
@@ -147,6 +165,9 @@ def main():
     print("\n📌 Final Classification Report (XGBoost + SBERT):")
     print_classification_results(xgb_sbert_conf_mat, xgb_sbert_accuracies, unique_labels)
 
+    print("\n📌 Final Classification Report (Neural Net + SBERT):")
+    print_classification_results(nn_sbert_conf_mat, nn_sbert_accuracies, unique_labels)
+
     # **📌 画图**
     plot_cross_validation(nb_accuracies, title="Naive Bayes + TF-IDF Accuracy")
     plot_cross_validation(knn_accuracies, title="kNN + Word2Vec Accuracy")
@@ -154,6 +175,7 @@ def main():
     plot_cross_validation(xgb_w2v_accuracies, title="XGBoost + Word2Vec Accuracy")
     plot_cross_validation(nn_accuracies, title="Neural Network + Word2Vec Accuracy")
     plot_cross_validation(xgb_sbert_accuracies, title="XGBoost + SBERT Accuracy")
+    plot_cross_validation(nn_sbert_accuracies, title="Neural Network + SBERT Accuracy")
 
     plot_confusion_matrix(nb_conf_mat, unique_labels, title="Naive Bayes + TF-IDF Confusion Matrix")
     plot_confusion_matrix(knn_conf_mat, unique_labels, title="kNN + Word2Vec Confusion Matrix")
@@ -161,6 +183,7 @@ def main():
     plot_confusion_matrix(xgb_w2v_conf_mat, unique_labels, title="XGBoost + Word2Vec Confusion Matrix")
     plot_confusion_matrix(nn_conf_mat, unique_labels, title="Neural Network + Word2Vec Confusion Matrix")
     plot_confusion_matrix(xgb_sbert_conf_mat, unique_labels, title="XGBoost + SBERT Confusion Matrix")
+    plot_confusion_matrix(nn_sbert_conf_mat, unique_labels, title="Neural Network + SBERT Confusion Matrix")
 
 if __name__ == "__main__":
     main()

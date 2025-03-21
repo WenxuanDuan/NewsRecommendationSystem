@@ -84,6 +84,33 @@ def train_neural_net_w2v(X_train, y_train, X_val, num_classes, epochs=20, hidden
 
     return model
 
+def train_neural_net_sbert(X_train, y_train, X_val, num_classes, epochs=20, hidden_dim=128, lr=0.001):
+    input_dim = X_train.shape[1]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = SimpleNN(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=num_classes).to(device)
+
+    # ✅ 计算 class weights
+    label_counts = Counter(y_train)
+    total_samples = len(y_train)
+    class_weights = [total_samples / (num_classes * label_counts[i]) for i in range(num_classes)]
+    class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
+
+    criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
+    y_train_tensor = torch.tensor(y_train, dtype=torch.long).to(device)
+
+    model.train()
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        outputs = model(X_train_tensor)
+        loss = criterion(outputs, y_train_tensor)
+        loss.backward()
+        optimizer.step()
+
+    return model
+
 # **📌 训练 XGBoost + SBERT**
 def train_xgboost_sbert(X_train_sbert, y_train, num_classes):
     model = xgb.XGBClassifier(

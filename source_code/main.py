@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from sklearn.model_selection import KFold
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document import load_and_preprocess_documents, document_to_w2v
@@ -7,7 +8,8 @@ from classification import (
     train_naive_bayes_tfidf,
     train_knn_w2v,
     train_xgboost_tfidf,
-    train_xgboost_w2v
+    train_xgboost_w2v,
+    train_neural_net_w2v
 )
 
 def main():
@@ -45,6 +47,9 @@ def main():
 
     # 🔹 XGBoost + Word2Vec
     xgb_w2v_accuracies, xgb_w2v_conf_mat = [], np.zeros((len(unique_labels), len(unique_labels)), dtype=int)
+
+    # 🔹 Neural Network + Word2Vec
+    nn_accuracies, nn_conf_mat = [], np.zeros((len(unique_labels), len(unique_labels)), dtype=int)
 
     for fold, (train_idx, test_idx) in enumerate(kf.split(X_tfidf), 1):
         print(f"🔹 Fold {fold}/10")
@@ -90,7 +95,20 @@ def main():
         xgb_w2v_accuracies.append(accuracy_xgb_w2v)
         xgb_w2v_conf_mat += conf_mat_xgb_w2v
 
-        print(f"✅ Naive Bayes: {accuracy_nb:.4f}, kNN: {accuracy_knn:.4f}, XGBoost TF-IDF: {accuracy_xgb_tfidf:.4f}, XGBoost W2V: {accuracy_xgb_w2v:.4f}\n")
+        # **📌 训练 Neural Network + Word2Vec**
+        nn_model = train_neural_net_w2v(X_train_w2v, y_train, X_test_w2v, num_classes=len(unique_labels))
+        nn_model.eval()
+        with torch.no_grad():
+            X_test_tensor = torch.tensor(X_test_w2v, dtype=torch.float32)
+            outputs = nn_model(X_test_tensor)
+            y_pred_nn = torch.argmax(outputs, dim=1).cpu().numpy()
+
+        # **📌 计算 NN + Word2Vec 评估指标**
+        conf_mat_nn, report_nn, accuracy_nn = compute_metrics(y_test, y_pred_nn, unique_labels, index_to_label)
+        nn_accuracies.append(accuracy_nn)
+        nn_conf_mat += conf_mat_nn
+
+        print(f"✅ Naive Bayes: {accuracy_nb:.4f}, kNN: {accuracy_knn:.4f}, XGBoost TF-IDF: {accuracy_xgb_tfidf:.4f}, XGBoost W2V: {accuracy_xgb_w2v:.4f}, Neural Network W2V: {accuracy_nn:.4f}\n")
 
     # **📌 打印最终结果**
     print("\n📌 Final Classification Report (Naive Bayes + TF-IDF):")
@@ -105,16 +123,21 @@ def main():
     print("\n📌 Final Classification Report (XGBoost + Word2Vec):")
     print_classification_results(xgb_w2v_conf_mat, xgb_w2v_accuracies, unique_labels)
 
+    print("\n📌 Final Classification Report (Neural Net + Word2Vec):")
+    print_classification_results(nn_conf_mat, nn_accuracies, unique_labels)
+
     # **📌 画图**
     plot_cross_validation(nb_accuracies, title="Naive Bayes + TF-IDF Accuracy")
     plot_cross_validation(knn_accuracies, title="kNN + Word2Vec Accuracy")
     plot_cross_validation(xgb_tfidf_accuracies, title="XGBoost + TF-IDF Accuracy")
     plot_cross_validation(xgb_w2v_accuracies, title="XGBoost + Word2Vec Accuracy")
+    plot_cross_validation(nn_accuracies, title="Neural Network + Word2Vec Accuracy")
 
     plot_confusion_matrix(nb_conf_mat, unique_labels, title="Naive Bayes + TF-IDF Confusion Matrix")
     plot_confusion_matrix(knn_conf_mat, unique_labels, title="kNN + Word2Vec Confusion Matrix")
     plot_confusion_matrix(xgb_tfidf_conf_mat, unique_labels, title="XGBoost + TF-IDF Confusion Matrix")
     plot_confusion_matrix(xgb_w2v_conf_mat, unique_labels, title="XGBoost + Word2Vec Confusion Matrix")
+    plot_confusion_matrix(nn_conf_mat, unique_labels, title="Neural Network + Word2Vec Confusion Matrix")
 
 if __name__ == "__main__":
     main()

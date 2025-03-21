@@ -6,11 +6,14 @@ import gensim.downloader as api
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from sentence_transformers import SentenceTransformer
 
 # **📌 加载 Word2Vec 预训练模型**
 print("\n📌 Loading Pre-trained Word2Vec Model...\n")
 w2v_model = api.load("word2vec-google-news-300")  # 300 维 Google 预训练模型
 
+# **📌 加载 sbert 预训练模型**
+sbert_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # **📌 文本预处理**
 def preprocess_text(text):
@@ -44,6 +47,15 @@ def document_to_w2v(doc, model=w2v_model, vector_size=300):
     else:
         return np.zeros(vector_size)
 
+# **📌 文档转换为 sbert 特征**
+def document_to_sbert(documents):
+    """
+    将一组文档转换为 SBERT 嵌入
+    :param documents: 预处理后的文本列表
+    :return: numpy 数组 (num_docs x embedding_dim)
+    """
+    embeddings = sbert_model.encode(documents, show_progress_bar=True)
+    return embeddings
 
 # **📌 加载并处理文档**
 def load_and_preprocess_documents(data_dir):

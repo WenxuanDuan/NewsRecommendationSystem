@@ -83,3 +83,14 @@ def train_neural_net_w2v(X_train, y_train, X_val, num_classes, epochs=20, hidden
         optimizer.step()
 
     return model
+
+# **📌 训练 XGBoost + SBERT**
+def train_xgboost_sbert(X_train_sbert, y_train, num_classes):
+    model = xgb.XGBClassifier(
+        objective="multi:softmax",
+        num_class=num_classes,
+        eval_metric="mlogloss",
+        random_state=42
+    )
+    model.fit(X_train_sbert, y_train)
+    return model

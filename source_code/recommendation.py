@@ -3,10 +3,10 @@ import json
 import pickle
 from sklearn.neighbors import NearestNeighbors
 
-def load_recommendation_data(vector_path="../data/article_vectors.npy",
-                             title_path="../data/article_titles.json",
-                             label_path="../data/article_labels.json",
-                             doc_path="../data/documents.pkl"):
+def load_recommendation_data(vector_path="data/article_vectors.npy",
+                             title_path="data/article_titles.json",
+                             label_path="data/article_labels.json",
+                             doc_path="data/documents.pkl"):
     vectors = np.load(vector_path)
 
     with open(title_path, "r") as f:

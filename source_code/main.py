@@ -82,6 +82,8 @@ def recommend_flow():
     vectors, titles, labels, documents = load_recommendation_data()
     knn_model = build_knn_model(vectors)
 
+    read_indices = set()  # ✅ 记录用户已读文章索引
+
     def show_random_articles():
         indices = random.sample(range(len(titles)), 5)
         print("\n📚 Here are 5 articles you might be interested in (random selection):\n")
@@ -89,10 +91,11 @@ def recommend_flow():
             print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
         return indices
 
-    # 👉 Homepage recommendation loop
+    # 👉 首页推荐循环
     while True:
         candidate_indices = show_random_articles()
         choice = input("\nEnter the article number you want to read (1-5), R to refresh, or Q to quit: ").strip()
+
         if choice.lower() == "q":
             print("👋 Thank you for using the system. See you next time!")
             return
@@ -100,49 +103,58 @@ def recommend_flow():
             continue
         elif choice.isdigit() and 1 <= int(choice) <= 5:
             current_index = candidate_indices[int(choice) - 1]
+            read_indices.add(current_index)
             print(f"\n✅ You chose to read: [{labels[current_index]}] {titles[current_index]}\n")
             print("📖 Article content:\n")
             print(documents[current_index])
         else:
             print("⚠️ Invalid input. Please try again.")
-            continue
+            continue  # 🚫 防止进入无限推荐循环
 
-        # 👉 Continuous recommendation loop
+        # 👉 无限推荐循环
         while True:
             recommended_indices = recommend_articles(knn_model, current_index)
-            shown_titles = set()
-            displayed = 0
+
             print("\n📢 Based on your reading, we recommend the following articles:\n")
+            shown_titles = set()
+            displayed_indices = []
             for idx in recommended_indices:
+                if idx in read_indices:
+                    continue  # ✅ 不推荐已读
                 title = titles[idx]
                 if title not in shown_titles:
                     shown_titles.add(title)
-                    displayed += 1
-                    print(f"{displayed}. [{labels[idx]}] (Index {idx}) {title}")
-                if displayed == 5:
+                    displayed_indices.append(idx)
+                    print(f"{len(displayed_indices)}. [{labels[idx]}] {title}")
+                if len(displayed_indices) == 5:
                     break
 
-            # 🎯 Show precision
-            target_label = labels[current_index]
-            matched = sum(1 for idx in recommended_indices if labels[idx] == target_label)
-            precision = matched / len(recommended_indices)
-            print(f"\n🎯 Recommendation Precision: {matched} / {len(recommended_indices)} belong to the same category (Precision = {precision:.2f})")
+            if not displayed_indices:
+                print("⚠️ No new articles to recommend. Returning to homepage.")
+                break
 
+            # 🎯 推荐精准度
+            target_label = labels[current_index]
+            matched = sum(1 for idx in displayed_indices if labels[idx] == target_label)
+            precision = matched / len(displayed_indices)
+            print(f"\n🎯 Recommendation Precision: {matched} / {len(displayed_indices)} belong to the same category (Precision = {precision:.2f})")
+
+            # 用户下一步选择
             user_input = input("\nEnter the article number you want to read (1-5), R to refresh, or Q to quit: ").strip()
 
             if user_input.lower() == "q":
                 print("👋 Thank you for reading. Goodbye!")
                 return
             elif user_input.lower() == "r":
-                break  # return to homepage
-            elif user_input.isdigit() and 1 <= int(user_input) <= 5:
-                current_index = recommended_indices[int(user_input) - 1]
+                break
+            elif user_input.isdigit() and 1 <= int(user_input) <= len(displayed_indices):
+                current_index = displayed_indices[int(user_input) - 1]
+                read_indices.add(current_index)
                 print(f"\n✅ You chose to read: [{labels[current_index]}] {titles[current_index]}\n")
                 print("📖 Article content:\n")
                 print(documents[current_index])
             else:
                 print("⚠️ Invalid input. Please try again.")
-
 
 def main():
     # 加载数据

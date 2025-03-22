@@ -105,14 +105,46 @@ def recommend_flow():
         for i, idx in enumerate(recommended_indices):
             print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
 
-        next_choice = input("\n请输入你想继续阅读的文章编号 (1-5)，或按 Q 退出系统: ").strip()
-        if next_choice.lower() == "q":
+        # 📊 推荐精准度
+        target_label = labels[current_index]
+        matched = sum(1 for idx in recommended_indices if labels[idx] == target_label)
+        precision = matched / len(recommended_indices)
+        print(f"\n🎯 推荐精准度：{matched} / {len(recommended_indices)} 属于同类（Precision = {precision:.2f}）")
+
+        # 🧭 用户选项
+        print("\n📌 你可以选择：")
+        print("1. 阅读一篇推荐文章")
+        print("2. 重新随机推荐文章")
+        print("3. 退出系统")
+
+        user_input = input("请输入选项编号 (1-3): ").strip()
+
+        if user_input == "1":
+            read_idx = int(input("请输入你想阅读的文章编号 (1-5): ").strip()) - 1
+            current_index = recommended_indices[read_idx]
+            print(f"\n✅ 你选择阅读：[{labels[current_index]}] {titles[current_index]}\n")
+            print("📖 正文内容如下：\n")
+            print(documents[current_index])
+
+        elif user_input == "2":
+            candidate_indices = random.sample(range(len(titles)), 5)
+            print("\n🔄 已为你重新推荐以下文章（随机）：\n")
+            for i, idx in enumerate(candidate_indices):
+                print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
+            choice = input("\n请输入你想阅读的文章编号 (1-5)，或按 Q 退出系统: ").strip()
+            if choice.lower() == "q":
+                print("👋 感谢使用，欢迎下次再来！")
+                break
+            current_index = candidate_indices[int(choice) - 1]
+            print(f"\n✅ 你选择阅读：[{labels[current_index]}] {titles[current_index]}\n")
+            print("📖 正文内容如下：\n")
+            print(documents[current_index])
+
+        elif user_input == "3":
             print("👋 感谢阅读，再见！")
             break
-        current_index = recommended_indices[int(next_choice) - 1]
-        print(f"\n✅ 你选择阅读：[{labels[current_index]}] {titles[current_index]}\n")
-        print("📖 正文内容如下：\n")
-        print(documents[current_index])
+        else:
+            print("⚠️ 无效输入，请重新选择。")
 
 
 def main():

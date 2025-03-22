@@ -8,10 +8,10 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sentence_transformers import SentenceTransformer
 
-# 📌 预加载词向量模型和SBERT模型
-print("\n📌 Loading Pre-trained Word2Vec Model...")
-w2v_model = api.load("word2vec-google-news-300")
-sbert_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+# # 📌 预加载词向量模型和SBERT模型
+# print("\n📌 Loading Pre-trained Word2Vec Model...")
+# w2v_model = api.load("word2vec-google-news-300")
+# sbert_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # 📌 文本预处理
 
@@ -25,17 +25,42 @@ def preprocess_text(text):
     processed_tokens = [lemmatizer.lemmatize(token) for token in tokens if token not in stop_words]
     return " ".join(processed_tokens)
 
+# ⏳ Word2Vec 模型缓存变量
+_w2v_model = None
+
+def get_w2v_model():
+    global _w2v_model
+    if _w2v_model is None:
+        print("\n📌 Loading Pre-trained Word2Vec Model...\n")
+        _w2v_model = api.load("word2vec-google-news-300")
+    return _w2v_model
+
 # 📌 文档转换为 Word2Vec 特征
 
-def document_to_w2v(doc, model=w2v_model, vector_size=300):
+def document_to_w2v(doc, model=None, vector_size=300):
+    if model is None:
+        model = get_w2v_model()
     words = doc.split()
     word_vectors = [model[word] for word in words if word in model]
     return np.mean(word_vectors, axis=0) if word_vectors else np.zeros(vector_size)
 
+
+# ⏳ SBERT 模型缓存变量
+_sbert_model = None
+
+def get_sbert_model():
+    global _sbert_model
+    if _sbert_model is None:
+        print("\n📌 Loading Pre-trained SBERT Model...\n")
+        _sbert_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+    return _sbert_model
+
+
 # 📌 文档转换为 SBERT 特征
 
 def document_to_sbert(documents):
-    embeddings = sbert_model.encode(documents, show_progress_bar=True)
+    model = get_sbert_model()
+    embeddings = model.encode(documents, show_progress_bar=True)
     return embeddings
 
 # 📌 加载并处理文档（返回文件名用于推荐系统）

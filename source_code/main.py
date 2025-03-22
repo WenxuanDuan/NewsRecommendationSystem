@@ -82,69 +82,66 @@ def recommend_flow():
     vectors, titles, labels, documents = load_recommendation_data()
     knn_model = build_knn_model(vectors)
 
-    # Step 1: 首页推荐
-    candidate_indices = random.sample(range(len(titles)), 5)
-    print("\n📚 Here are 5 articles you might be interested in (random selection)：\n")
-    for i, idx in enumerate(candidate_indices):
-        print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
-
-    choice = input("\nPlease enter the article number you want to read (1-5), or Q to quit: ").strip()
-    if choice.lower() == "q":
-        print("👋 Thank you for using the system. See you next time!")
-        return
-    selected_index = candidate_indices[int(choice) - 1]
-    print(f"\n✅ You chose to read：[{labels[selected_index]}] {titles[selected_index]}\n")
-    print("📖 Article content：\n")
-    print(documents[selected_index])
-
-    # Step 2+: 无限推荐直到退出
-    current_index = selected_index
-    while True:
-        recommended_indices = recommend_articles(knn_model, current_index)
-        print("\n📢 Based on your reading, we recommend the following articles:\n")
-        for i, idx in enumerate(recommended_indices):
+    def show_random_articles():
+        indices = random.sample(range(len(titles)), 5)
+        print("\n📚 Here are 5 articles you might be interested in (random selection):\n")
+        for i, idx in enumerate(indices):
             print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
+        return indices
 
-        # 📊 推荐精准度
-        target_label = labels[current_index]
-        matched = sum(1 for idx in recommended_indices if labels[idx] == target_label)
-        precision = matched / len(recommended_indices)
-        print(f"\n🎯 Recommendation Precision: {matched} / {len(recommended_indices)} belong to the same category（Precision = {precision:.2f}）")
-
-        # 🧭 用户选项
-        print("\n📌 What would you like to do next?")
-        print("1. Read one of the recommended articles")
-        print("2. Get a new random selection")
-        print("3. Exit the system")
-
-        user_input = input("Please enter your choice (1-3): ").strip()
-
-        if user_input == "1":
-            read_idx = int(input("Enter the article number you'd like to read (1-5): ").strip()) - 1
-            current_index = recommended_indices[read_idx]
-            print(f"\n✅ You chose to read: [{labels[current_index]}] {titles[current_index]}\n")
-            print("📖 Article content: \n")
-            print(documents[current_index])
-
-        elif user_input == "2":
-            candidate_indices = random.sample(range(len(titles)), 5)
-            print("\n🔄 Here are 5 new randomly selected articles: \n")
-            for i, idx in enumerate(candidate_indices):
-                print(f"{i + 1}. [{labels[idx]}] {titles[idx]}")
-            choice = input("\nEnter the article number to read (1-5), or Q to quit: ").strip()
-            if choice.lower() == "q":
-                print("👋 Thank you for using the system. Goodbye! ")
-                break
+    # 👉 Homepage recommendation loop
+    while True:
+        candidate_indices = show_random_articles()
+        choice = input("\nEnter the article number you want to read (1-5), R to refresh, or Q to quit: ").strip()
+        if choice.lower() == "q":
+            print("👋 Thank you for using the system. See you next time!")
+            return
+        elif choice.lower() == "r":
+            continue
+        elif choice.isdigit() and 1 <= int(choice) <= 5:
             current_index = candidate_indices[int(choice) - 1]
             print(f"\n✅ You chose to read: [{labels[current_index]}] {titles[current_index]}\n")
-            print("📖 Article content: \n")
+            print("📖 Article content:\n")
             print(documents[current_index])
-
-        elif user_input == "3":
-            print("👋 Thank you for reading. Goodbye!")
-            break
         else:
             print("⚠️ Invalid input. Please try again.")
+            continue
+
+        # 👉 Continuous recommendation loop
+        while True:
+            recommended_indices = recommend_articles(knn_model, current_index)
+            shown_titles = set()
+            displayed = 0
+            print("\n📢 Based on your reading, we recommend the following articles:\n")
+            for idx in recommended_indices:
+                title = titles[idx]
+                if title not in shown_titles:
+                    shown_titles.add(title)
+                    displayed += 1
+                    print(f"{displayed}. [{labels[idx]}] (Index {idx}) {title}")
+                if displayed == 5:
+                    break
+
+            # 🎯 Show precision
+            target_label = labels[current_index]
+            matched = sum(1 for idx in recommended_indices if labels[idx] == target_label)
+            precision = matched / len(recommended_indices)
+            print(f"\n🎯 Recommendation Precision: {matched} / {len(recommended_indices)} belong to the same category (Precision = {precision:.2f})")
+
+            user_input = input("\nEnter the article number you want to read (1-5), R to refresh, or Q to quit: ").strip()
+
+            if user_input.lower() == "q":
+                print("👋 Thank you for reading. Goodbye!")
+                return
+            elif user_input.lower() == "r":
+                break  # return to homepage
+            elif user_input.isdigit() and 1 <= int(user_input) <= 5:
+                current_index = recommended_indices[int(user_input) - 1]
+                print(f"\n✅ You chose to read: [{labels[current_index]}] {titles[current_index]}\n")
+                print("📖 Article content:\n")
+                print(documents[current_index])
+            else:
+                print("⚠️ Invalid input. Please try again.")
 
 
 def main():

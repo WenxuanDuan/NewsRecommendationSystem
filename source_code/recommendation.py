@@ -32,10 +32,12 @@ def build_knn_model(vectors, metric="cosine", k=5):
     return model
 
 
-def recommend_articles(knn_model, selected_index, top_k=5):
-    """
-    返回与指定文章最相似的 top_k 篇文章索引
-    """
-    distances, indices = knn_model.kneighbors([knn_model._fit_X[selected_index]])
-    # 去掉 selected 本身（第一个）
-    return indices[0][1:top_k + 1].tolist()
+def recommend_articles(knn_model, article_index, top_k=5):
+    distances, indices = knn_model.kneighbors([knn_model._fit_X[article_index]], n_neighbors=top_k + 1)
+    unique_indices = []
+    for idx in indices[0]:
+        if idx != article_index and idx not in unique_indices:
+            unique_indices.append(idx)
+        if len(unique_indices) == top_k:
+            break
+    return unique_indices

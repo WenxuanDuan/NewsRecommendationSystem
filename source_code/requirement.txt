@@ -1,5 +1,20 @@
-streamlit
-scikit-learn
+# Core libraries
 numpy
 pandas
+scikit-learn
+xgboost
+torch
 sentence-transformers
+
+# Web App (Streamlit)
+streamlit
+
+# Text processing
+nltk
+
+# Visualization
+matplotlib
+seaborn
+
+# Other utils
+gensim

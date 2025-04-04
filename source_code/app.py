@@ -72,7 +72,7 @@ def show_home():
 
     if st.button("🔄 Refresh"):
         st.session_state.candidate_indices = random.sample(range(len(titles)), 6)
-        st.experimental_rerun()
+        st.rerun()
 
 # === 阅读文章 + 推荐页面 ===
 def show_article_page(idx):
@@ -94,7 +94,7 @@ def show_article_page(idx):
 
     if st.button("🏠 Back to Homepage"):
         st.query_params.clear()
-        st.experimental_rerun()
+        st.rerun()
 
 # === 路由控制 ===
 if page == "read" and article_id is not None:

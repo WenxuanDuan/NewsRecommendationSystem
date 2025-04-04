@@ -65,13 +65,17 @@ def show_home():
     st.title("📰 News Recommendation System")
     st.markdown("Here are 5 articles you might be interested in:")
 
-    if "candidate_indices" not in st.session_state:
-        st.session_state.candidate_indices = random.sample(range(len(titles)), 6)
+    # 过滤已读文章
+    unread_indices = [i for i in range(len(titles)) if i not in st.session_state.read_indices]
+    if "candidate_indices" not in st.session_state or len(st.session_state.candidate_indices) == 0:
+        st.session_state.candidate_indices = random.sample(unread_indices, min(6, len(unread_indices)))
 
     show_grid(st.session_state.candidate_indices)
 
     if st.button("🔄 Refresh"):
-        st.session_state.candidate_indices = random.sample(range(len(titles)), 6)
+        # 保证不重复推荐已读的
+        unread_indices = [i for i in range(len(titles)) if i not in st.session_state.read_indices]
+        st.session_state.candidate_indices = random.sample(unread_indices, min(6, len(unread_indices)))
         st.rerun()
 
 # === 阅读文章 + 推荐页面 ===

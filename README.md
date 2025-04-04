@@ -28,26 +28,17 @@ It allows users to discover and explore articles through an elegant web interfac
 1. **Preprocessing**:
    - Articles are cleaned using NLTK (tokenization, stopword removal, lemmatization).
    - Word2Vec embeddings are averaged to form document vectors.
-![datapreprocessing.png](../Figures/datapreprocessing.png)
 
 2. **Classification (optional)**:
    - A full 10-fold cross-validation pipeline evaluates different models like XGBoost, kNN, Neural Net, and SBERT.
 
-![ClassificationModels.png](../Figures/ClassificationModels.png)
 3. **Recommendation**:
    - Based on the selected article, its vector is compared (cosine similarity) with others.
    - The system uses `sklearn.neighbors.NearestNeighbors` for fast nearest-neighbor search.
-![UserInteraction.png](../Figures/UserInteraction.png)
-   - 
+   
 4. **Frontend**:
    - Built with **Streamlit** and designed for interactivity.
    - Uses session state and query parameters to support seamless navigation between views.
-
-## 📸 UI Preview
-
-| Homepage | Read + Recommend |
-|----------|-----------------|
-|![homepage.png](../Figures/homepage.png) | ![recommendation.png](../Figures/recommendation.png) |
 
 ## 🚀 Get Started
 
@@ -113,4 +104,4 @@ news-recommendation-system/
 ---
 
 Feel free to star the repo and try the demo online!
-![streamlit_qr.png](../Figures/streamlit_qr.png)
+https://newsrecommendationsystem-dwx.streamlit.app/

@@ -5,6 +5,7 @@ import pickle
 data_dir = "../data/bbc/"
 titles = []
 documents = []
+labels = []
 
 for category in sorted(os.listdir(data_dir)):
     category_path = os.path.join(data_dir, category)
@@ -20,6 +21,7 @@ for category in sorted(os.listdir(data_dir)):
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read().strip()
             documents.append(content)
+            labels.append(category)  # ✅ 添加对应类别
 
             # 提取第一段或第一行作为标题
             lines = content.splitlines()
@@ -27,7 +29,7 @@ for category in sorted(os.listdir(data_dir)):
             title = non_empty[0] if non_empty else filename
             titles.append(title)
 
-# 保存标题和原文
+# 保存标题、正文、标签
 os.makedirs("data", exist_ok=True)
 
 with open("data/original_article_titles.json", "w") as f:
@@ -36,4 +38,7 @@ with open("data/original_article_titles.json", "w") as f:
 with open("data/original_documents.pkl", "wb") as f:
     pickle.dump(documents, f)
 
-print("✅ Finished: original_article_titles.json and original_documents.pkl saved.")
+with open("data/original_article_labels.json", "w") as f:
+    json.dump(labels, f)
+
+print("✅ Finished: original_article_titles.json, original_documents.pkl, and original_article_labels.json saved.")

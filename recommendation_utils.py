@@ -15,7 +15,7 @@ def load_article_data():
     with open(os.path.join(DATA_DIR, "original_article_titles.json")) as f:
         titles = json.load(f)
 
-    with open(os.path.join(DATA_DIR, "article_labels.json")) as f:
+    with open(os.path.join(DATA_DIR, "original_article_labels.json")) as f:
         labels = json.load(f)
 
     with open(os.path.join(DATA_DIR, "original_documents.pkl"), "rb") as f:

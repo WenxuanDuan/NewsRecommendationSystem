@@ -63,7 +63,7 @@ def show_grid(indices):
 # === 首页界面 ===
 def show_home():
     st.title("📰 News Recommendation System")
-    st.markdown("Here are 5 articles you might be interested in:")
+    st.markdown("Here are articles you might be interested in:")
 
     # 过滤已读文章
     unread_indices = [i for i in range(len(titles)) if i not in st.session_state.read_indices]
